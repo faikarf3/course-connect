@@ -2,7 +2,7 @@ import { supabase, supabaseAdmin } from './supabase'
 import { sendVerificationEmail } from './email'
 
 export function generateVerificationCode(): string {
-  return require('crypto').randomBytes(3).toString('hex').toUpperCase()
+  return require('crypto').randomBytes(16).toString('hex').toUpperCase()
 }
 
 export async function createUser(email: string, password: string) {

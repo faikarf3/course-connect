@@ -1,31 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createUser } from '@/lib/auth'
+import { registerSchema } from '@/lib/validation'
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json()
-
-    if (!email || !password) {
+    const body = await request.json()
+    
+    const validationResult = registerSchema.safeParse(body)
+    if (!validationResult.success) {
       return NextResponse.json(
-        { error: 'Email and password are required' },
+        { error: 'Invalid input data' },
         { status: 400 }
       )
     }
 
-    if (password.length < 8) {
-      return NextResponse.json(
-        { error: 'Password must be at least 8 characters long' },
-        { status: 400 }
-      )
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { error: 'Please provide a valid email address' },
-        { status: 400 }
-      )
-    }
+    const { email, password } = validationResult.data
 
     const user = await createUser(email.toLowerCase(), password)
 
@@ -39,15 +28,8 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Registration error:', error)
     
-    if (error.message?.includes('User already registered')) {
-      return NextResponse.json(
-        { error: 'An account with this email already exists' },
-        { status: 409 }
-      )
-    }
-
     return NextResponse.json(
-      { error: error.message || 'Registration failed' },
+      { error: 'Registration failed. Please try again.' },
       { status: 400 }
     )
   }

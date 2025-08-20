@@ -1,16 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { loginUser } from '@/lib/auth'
+import { loginSchema } from '@/lib/validation'
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json()
-
-    if (!email || !password) {
+    const body = await request.json()
+    
+    const validationResult = loginSchema.safeParse(body)
+    if (!validationResult.success) {
       return NextResponse.json(
-        { error: 'Email and password are required' },
+        { error: 'Invalid input data' },
         { status: 400 }
       )
     }
+
+    const { email, password } = validationResult.data
 
     const user = await loginUser(email.toLowerCase(), password)
 
@@ -27,23 +31,9 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Login error:', error)
     
-    if (error.message === 'Invalid credentials') {
-      return NextResponse.json(
-        { error: 'Invalid email or password' },
-        { status: 401 }
-      )
-    }
-    
-    if (error.message === 'Email not verified') {
-      return NextResponse.json(
-        { error: 'Please verify your email before logging in' },
-        { status: 403 }
-      )
-    }
-
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: 'Invalid credentials. Please try again.' },
+      { status: 401 }
     )
   }
 }

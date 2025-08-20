@@ -1,16 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { resendVerificationEmail } from '@/lib/auth'
+import { resendVerificationSchema } from '@/lib/validation'
 
 export async function POST(request: NextRequest) {
   try {
-    const { email } = await request.json()
-
-    if (!email) {
+    const body = await request.json()
+    
+    const validationResult = resendVerificationSchema.safeParse(body)
+    if (!validationResult.success) {
       return NextResponse.json(
-        { error: 'Email is required' },
+        { error: 'Invalid input data' },
         { status: 400 }
       )
     }
+
+    const { email } = validationResult.data
 
     await resendVerificationEmail(email.toLowerCase())
 
@@ -21,7 +25,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Resend verification error:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to send verification email' },
+      { error: 'Failed to send verification email. Please try again.' },
       { status: 400 }
     )
   }
